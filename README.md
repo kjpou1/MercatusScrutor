@@ -1,11 +1,12 @@
-# BASIC TEMPLATE
+# MercatusScrutor
 
-This is a basic python starting template.
+MercatusScrutor is a web scraping tool specifically designed to automate the extraction and analysis of order data from Auchan Drive. It enables users to efficiently track, store, and update information about their supermarket purchases. With built-in capabilities to manage historical order records, the tool focuses on ensuring that all orders are tracked, avoiding redundant processing and providing insightful details about purchases. MercatusScrutor emphasizes reliability, scalability, and optimized performance for the seamless handling of large amounts of order data.
 
+The name "MercatusScrutor" has Latin roots, where "Mercatus" means marketplace, and "Scrutor" means to search or examine thoroughly, reflecting the tool's purpose of efficiently examining marketplace order data.
 
 ## Table of Contents
 
-- [BASIC TEMPLATE](#basic-template)
+- [MercatusScrutor](#mercatusscrutor)
   - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
   - [Usage](#usage)
@@ -63,10 +64,10 @@ python run.py
 ```
 ## Configuration
 
-The configuration settings are managed through environment variables and can be set in a `.env` file in the root directory of the project. 
+The configuration settings are managed through environment variables and can be set in a `.env` file in the root directory of the project.
 Example `.env` file:
 
-``` 
+```
 ENV_KEY=example value
 ```
 
@@ -100,3 +101,4 @@ To run the script and clear the directory before running:
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
+
