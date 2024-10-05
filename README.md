@@ -23,7 +23,7 @@ The name "MercatusScrutor" has Latin roots, where "Mercatus" means marketplace, 
 1. **Clone the repository:**
 
     ```bash
-    git clone https://github.com/yourusername/project_name.git
+    git clone https://github.com/kjpou1/MercatusScrutor.git
     cd project_name
     ```
 
