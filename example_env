@@ -1,0 +1,16 @@
+# Example .env file for MercatusScrutor
+
+# Time interval (in minutes) between each scraping process
+SCRAPING_INTERVAL=30
+
+# Target URL to start scraping from
+TARGET_URL=https://auchandrive.lu/historique-commandes
+
+# Run the browser in headless mode (true/false)
+HEADLESS=false
+
+# Username for logging into the Auchan Drive account
+USERNAME=your_username_here
+
+# Password for logging into the Auchan Drive account
+PASSWORD=your_password_here
