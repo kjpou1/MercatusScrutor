@@ -4,6 +4,7 @@ import json
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 from app.config.config import Config
 from app.helpers.utils import Utils
+import os
 
 class AuchanOrderService:
     def __init__(self):
@@ -12,12 +13,121 @@ class AuchanOrderService:
         """
         self.config = Config()  # Use the global configuration instance
         self.logger = logging.getLogger(__name__)
+        self.history_file = self.config.history_file
+        self.order_history = []  # Store existing orders with details
+        self.existing_order_ids = {}  # Map of order_number -> order details
+
+    def load_order_history(self):
+        """Loads the existing order history from the JSON file."""
+        if os.path.exists(self.history_file):
+            with open(self.history_file, 'r', encoding='utf-8') as file:
+                self.order_history = json.load(file)
+                self.existing_order_ids = {order['order_number']: order for order in self.order_history}
+        else:
+            self.order_history = []
+            self.existing_order_ids = {}
+
+    def save_order_history(self, new_orders):
+        """Saves the updated order history to the JSON file with updated orders in place and new orders pre-appended."""
+        
+        # Load the existing orders if the file exists
+        if os.path.exists(self.history_file):
+            with open(self.history_file, 'r', encoding='utf-8') as file:
+                existing_orders = json.load(file)
+        else:
+            existing_orders = []
+
+        # Dictionary for quick lookup of existing orders by order_number
+        existing_orders_map = {order['order_number']: order for order in existing_orders}
+
+        # Prepare a list for updated orders, maintaining the original order in the history
+        updated_existing_orders = []
+        
+        # Process new orders
+        for new_order in new_orders:
+            order_number = new_order['order_number']
+            
+            # If order exists, update it in place
+            if order_number in existing_orders_map:
+                existing_orders_map[order_number].update(new_order)
+            else:
+                # If it's a new order, add to the updated_existing_orders list (pre-append new orders)
+                updated_existing_orders.append(new_order)
+
+        # Combine updated existing orders with the new ones at the beginning
+        combined_orders = updated_existing_orders + list(existing_orders_map.values())
+        
+        # Save the updated order history back to the file
+        with open(self.history_file, 'w', encoding='utf-8') as file:
+            json.dump(combined_orders, file, ensure_ascii=False, indent=4)
+
+        self.logger.info("Order history successfully updated with in-place modifications.")
+
+    
+    def process_orders(self, new_orders):
+        """Processes new orders, updating the status if necessary."""
+        updated_orders = []
+        new_order_list = []
+
+        for new_order in new_orders:
+            order_number = new_order['order_number']
+            new_order['status'] = new_order['status'].lower()  # Ensure status is always lowercase
+
+            if order_number in self.existing_order_ids:
+                existing_order = self.existing_order_ids[order_number]
+                existing_order['status'] = existing_order['status'].lower()  # Ensure existing status is lowercase
+                
+                # Check if status has changed
+                if new_order['status'] != existing_order['status']:
+                    self.logger.info(f"Order {order_number} has a status update: {existing_order['status']} -> {new_order['status']}")
+                    
+                    # Store the previous status
+                    new_order['previous_status'] = existing_order['status']
+                    
+                    # Add current processing status field
+                    new_order['processing_status'] = "pending"
+                    
+                    # If the status is "annulé", update the order but do not read details again
+                    if new_order['status'] == "annulé":
+                        existing_order.update(new_order)
+                        updated_orders.append(existing_order)
+                        self.logger.info(f"Skipping detail processing for order {order_number} (status: annulé).")
+                    else:
+                        # Update the order and mark for detail processing
+                        existing_order.update(new_order)
+                        updated_orders.append(existing_order)
+                        self.logger.info(f"Processing details for updated order {order_number}.")
+                        yield existing_order  # Send the order for detail processing
+            else:
+                # New order, process it and add to the list
+                self.logger.info(f"New order found: {order_number}. Processing details.")
+                new_order['previous_status'] = None  # New order, no previous status
+
+                # Set processing status based on current order status
+                if new_order['status'] == "livré":
+                    new_order['processing_status'] = "processed"
+                else:
+                    new_order['processing_status'] = "pending"
+
+                new_order_list.append(new_order)
+                yield new_order  # Send the order for detail processing
+
+        # Save updated and new orders
+        if updated_orders or new_order_list:
+            self.save_order_history(new_order_list + updated_orders)
+        else:
+            self.logger.info("No new or updated orders to process.")
+
+
 
     async def scrape_auchan_order_history(self):
         """
         Asynchronous method to scrape the Auchan Drive order history.
         """
         self.logger.info("Starting Auchan order history scraping process.")
+
+        # Load the existing order history
+        self.load_order_history()
 
         # Load configuration settings
         target_url = self.config.target_url
@@ -54,7 +164,7 @@ class AuchanOrderService:
                 return
 
             # Extract order information from table rows into a data structure
-            self.logger.info("Extracting order information.")
+            self.logger.info("Extracting order history.")
             await page.goto(target_url)
             await page.wait_for_selector("table.table")
 
@@ -82,7 +192,7 @@ class AuchanOrderService:
                     status = await status_element.text_content() if status_element else None
                     details_link = await details_link_element.get_attribute("href") if details_link_element else None
 
-                    # Append order details to the list only if order number is present, numeric, and status is present
+                    # Process only new orders or orders with updated status
                     if order_number and order_number.isnumeric() and status:
                         orders.append({
                             "order_number": order_number,
@@ -99,9 +209,8 @@ class AuchanOrderService:
                     self.logger.error(f"Failed to extract order details for row: {e}")
                     continue  # Skip to the next row in case of an error
 
-            # Iterate through the orders to extract detailed information
-            self.logger.info("Extracting order details.")
-            for order in orders:
+            # Process new and updated orders (yielding orders needing detail processing)
+            for order in self.process_orders(orders):
                 details_link = order.get("details_link")
                 if details_link:
                     try:
@@ -114,16 +223,9 @@ class AuchanOrderService:
                         self.logger.error(f"Failed to extract detailed order information for {order['order_number']}: {e}")
                         continue
 
-            # Save the orders to a JSON file
-            try:
-                with open('order_history.json', 'w', encoding='utf-8') as f:
-                    json.dump(orders, f, ensure_ascii=False, indent=4)
-                self.logger.info("Order history successfully saved to order_history.json.")
-            except Exception as e:
-                self.logger.error(f"Failed to save order history to JSON file: {e}")
-
             # Close the browser
             await browser.close()
+
 
     async def extract_order_details(self, page):
         """

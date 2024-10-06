@@ -13,6 +13,7 @@ The name "MercatusScrutor" has Latin roots, where "Mercatus" means marketplace, 
     - [Command Line Arguments](#command-line-arguments)
     - [Examples](#examples)
   - [Configuration](#configuration)
+    - [Example `.env` file:](#example-env-file)
   - [Shell Script](#shell-script)
     - [Shell Script Examples](#shell-script-examples)
     - [Running the Shell Script](#running-the-shell-script)
@@ -40,9 +41,9 @@ The name "MercatusScrutor" has Latin roots, where "Mercatus" means marketplace, 
     pip install -r requirements.txt
     ```
 
-4. **Set environment file**
+5. **Set environment file**
 
-    Copy or rename the `example_env` file to `.env` before running
+    Copy or rename the `example_env` file to `.env` before running:
 
     ```bash
     cp example_env .env
@@ -54,56 +55,58 @@ To run the library, use the provided `run.py` script with appropriate command-li
 
 ### Command Line Arguments
 
-The following command-line arguments are supported:
-
-- `--scraping-interval`: Time interval (in minutes) between each scraping process. The default is set to 30 minutes or can be overridden by the `SCRAPING_INTERVAL` environment variable.
-  ```bash
-  --scraping-interval 45
-  ```
-
-- `--target-url`: URL to start scraping from. The default is `https://auchandrive.lu/historique-commandes` or can be overridden by the `TARGET_URL` environment variable.
-  ```bash
-  --target-url https://custom-url.com
-  ```
-
-- `--headless`: Run the browser in headless mode (without a visible browser window). This flag can be set by the `HEADLESS` environment variable (`true` or `false`).
-  ```bash
-  --headless
-  ```
-
-- `--username`: Username for logging into the Auchan Drive account, can be set via the `USERNAME` environment variable.
-  ```bash
-  --username myemail@example.com
-  ```
-
-- `--password`: Password for logging into the Auchan Drive account, can be set via the `PASSWORD` environment variable.
-  ```bash
-  --password mysecretpassword
-  ```
+To run the script, you can pass command-line arguments to override environment settings. These arguments include:
+- `--scraping-interval`: Time interval (in minutes) between each scraping run.
+- `--target-url`: Target URL for scraping.
+- `--headless`: Run the browser in headless mode (true/false).
+  > **Note**: Headless mode must be set to `true` if running on a Raspberry Pi.
+- `--username`: Username for logging into Auchan Drive.
+- `--password`: Password for logging into Auchan Drive.
 
 ### Examples
 
-To run the program:
+To run the program with default settings:
 
 ```bash
-python run.py --scraping-interval 45 --target-url https://custom-url.com --username myemail@example.com --password mysecretpassword --headless
+python run.py
+```
+
+To run the program with custom command-line arguments:
+
+```bash
+python run.py --scraping-interval 60 --target-url https://custom-url.com --headless --username myemail@example.com --password mypassword
 ```
 
 ## Configuration
 
 The configuration settings are managed through environment variables and can be set in a `.env` file in the root directory of the project.
-Example `.env` file:
 
-```
+### Example `.env` file:
+
+```bash
+# Example .env file for MercatusScrutor
+
+# Time interval (in minutes) between each scraping process
 SCRAPING_INTERVAL=30
+
+# Target URL to start scraping from
 TARGET_URL=https://auchandrive.lu/historique-commandes
+
+# Run the browser in headless mode (true/false)
 HEADLESS=false
-USERNAME=myemail@example.com
-PASSWORD=mysecretpassword
+
+# Username for logging into the Auchan Drive account
+USERNAME=your_username_here
+
+# Password for logging into the Auchan Drive account
+PASSWORD=your_password_here
+
+# Path to the order history file
+ORDER_HISTORY_FILE=./data/order_history.json
 ```
 
 > [!NOTE]
-> An `example_env` file is provided to get started. Copy the file to `.env` before running:
+> An `example_env` file is provided to get started.  Copy the file to `.env` before running:
 
 ## Shell Script
 
@@ -111,12 +114,12 @@ A shell script `run.sh` is provided to automate the execution of the script.
 
 ### Shell Script Examples
 
-Example `run.sh`:
+Example `run.sh`
 
 ```bash
 #!/bin/bash
 source ./.venv/bin/activate
-python ./run.py --scraping-interval 45 --target-url https://custom-url.com --headless
+python ./run.py
 deactivate
 ```
 

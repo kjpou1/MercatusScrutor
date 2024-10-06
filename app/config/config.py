@@ -3,7 +3,6 @@ import os
 from dotenv import load_dotenv
 from app.models import SingletonMeta
 
-
 class Config(metaclass=SingletonMeta):
     _is_initialized = False
 
@@ -11,7 +10,7 @@ class Config(metaclass=SingletonMeta):
         load_dotenv()  # Load environment variables from .env file
         # Prevent re-initialization
         if not self._is_initialized:
-            # Initialize other configuration settings here
+            # Initialize configuration settings
             self.logger = logging.getLogger(__name__)
             # Load initial values from environment variables
             self._scraping_interval = int(self.get('SCRAPING_INTERVAL', 30))
@@ -19,6 +18,7 @@ class Config(metaclass=SingletonMeta):
             self._headless = self.get('HEADLESS', 'false').lower() == 'true'
             self._username = self.get('USERNAME')
             self._password = self.get('PASSWORD')
+            self._history_file = self.get('ORDER_HISTORY_FILE', 'order_history.json')  # History file path
             self._is_initialized = True
 
     @classmethod
@@ -79,3 +79,11 @@ class Config(metaclass=SingletonMeta):
     @password.setter
     def password(self, value: str):
         self._password = value
+
+    @property
+    def history_file(self) -> str:
+        return self._history_file
+
+    @history_file.setter
+    def history_file(self, value: str):
+        self._history_file = value

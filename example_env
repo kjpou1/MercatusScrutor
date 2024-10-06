@@ -14,3 +14,6 @@ USERNAME=your_username_here
 
 # Password for logging into the Auchan Drive account
 PASSWORD=your_password_here
+
+# You can adjust the file path as needed
+ORDER_HISTORY_FILE=order_history.json  
