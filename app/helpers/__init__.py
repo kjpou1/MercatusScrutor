@@ -1,4 +1,4 @@
 # app/helpers/__init__.py
-from Utils import Utils
+from .utils import Utils
 
 __all__ = ['Utils']

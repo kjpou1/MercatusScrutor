@@ -3,7 +3,7 @@ import asyncio
 import json
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 from app.config.config import Config
-
+from app.helpers.utils import Utils
 
 class AuchanOrderService:
     def __init__(self):
@@ -54,11 +54,13 @@ class AuchanOrderService:
                 return
 
             # Extract order information from table rows into a data structure
+            self.logger.info("Extracting order information.")
             await page.goto(target_url)
             await page.wait_for_selector("table.table")
 
             orders = []
             rows = await page.query_selector_all("table.table tbody tr")
+            self.logger.info("Processing %s rows.", len(rows))
             for row in rows:
                 try:
                     order_number_element = await row.query_selector("td:nth-child(1)")
@@ -80,23 +82,25 @@ class AuchanOrderService:
                     status = await status_element.text_content() if status_element else None
                     details_link = await details_link_element.get_attribute("href") if details_link_element else None
 
-                    # Append order details to the list
-                    orders.append({
-                        "order_number": order_number,
-                        "reference": reference,
-                        "date": date,
-                        "total_price": total_price,
-                        "pickup_point": pickup_point,
-                        "payment_method": payment_method,
-                        "status": status,
-                        "details_link": details_link
-                    })
+                    # Append order details to the list only if order number is present, numeric, and status is present
+                    if order_number and order_number.isnumeric() and status:
+                        orders.append({
+                            "order_number": order_number,
+                            "reference": reference,
+                            "date": Utils.clean_dates(date),
+                            "total_price": Utils.clean_string(total_price),
+                            "pickup_point": pickup_point,
+                            "payment_method": payment_method,
+                            "status": Utils.clean_string(status),
+                            "details_link": details_link
+                        })
 
                 except Exception as e:
                     self.logger.error(f"Failed to extract order details for row: {e}")
                     continue  # Skip to the next row in case of an error
 
             # Iterate through the orders to extract detailed information
+            self.logger.info("Extracting order details.")
             for order in orders:
                 details_link = order.get("details_link")
                 if details_link:
@@ -138,11 +142,11 @@ class AuchanOrderService:
 
             for product in products:
                 # Check if the row is a category row
-                category_element = await product.query_selector(".category span")
+                category_element = await product.query_selector("td > span")
                 if category_element:
                     current_category = (await category_element.text_content()).strip()
                     continue
-
+                
                 # Attempt to locate the elements for product name, description, quantity, unit price, and total price.
                 product_name_element = await product.query_selector(".manufacturer-name")
                 product_description_element = await product.query_selector("strong > a")
@@ -161,19 +165,30 @@ class AuchanOrderService:
                 discount = await discount_element.text_content() if discount_element else ""
                 cagnotte = await cagnotte_element.text_content() if cagnotte_element else ""
 
-                # Combine product name and description
-                product_full_name = f"{product_name} {product_description}".strip()
-
+                # Do some cleanup of the data
+                product_name = Utils.clean_string(product_name)
+                product_description = Utils.clean_string(product_description)
+                discount = Utils.extract_numeric_value(discount)
+                cagnotte = Utils.extract_numeric_value(cagnotte)
+                
+                # Ensure the description doesn't duplicate the name
+                if product_description.startswith(product_name):
+                    product_full_name = product_description  # Use only the description if it already includes the name
+                else:
+                    product_full_name = f"{product_name} {product_description}".strip()  # Concatenate if they're different
+   
                 if product_full_name:
                     details[product_full_name] = {
+                        "name": product_name,
+                        "description": product_description,
                         "category": current_category,
                         "quantity": quantity.strip(),
-                        "unit_price": unit_price.strip(),
-                        "total_price": total_price.strip(),
+                        "unit_price": Utils.clean_price(unit_price.strip()),
+                        "total_price": Utils.clean_price(total_price.strip()),
                         "discount": discount.strip(),
                         "cagnotte": cagnotte.strip()
                     }
-
+                    
             return details
         except Exception as e:
             self.logger.error(f"Failed to extract order details: {e}")
