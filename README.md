@@ -40,7 +40,7 @@ The name "MercatusScrutor" has Latin roots, where "Mercatus" means marketplace, 
     pip install -r requirements.txt
     ```
 
-5. **Set environment file**
+4. **Set environment file**
 
     Copy or rename the `example_env` file to `.env` before running
 
@@ -54,40 +54,70 @@ To run the library, use the provided `run.py` script with appropriate command-li
 
 ### Command Line Arguments
 
+The following command-line arguments are supported:
+
+- `--scraping-interval`: Time interval (in minutes) between each scraping process. The default is set to 30 minutes or can be overridden by the `SCRAPING_INTERVAL` environment variable.
+  ```bash
+  --scraping-interval 45
+  ```
+
+- `--target-url`: URL to start scraping from. The default is `https://auchandrive.lu/historique-commandes` or can be overridden by the `TARGET_URL` environment variable.
+  ```bash
+  --target-url https://custom-url.com
+  ```
+
+- `--headless`: Run the browser in headless mode (without a visible browser window). This flag can be set by the `HEADLESS` environment variable (`true` or `false`).
+  ```bash
+  --headless
+  ```
+
+- `--username`: Username for logging into the Auchan Drive account, can be set via the `USERNAME` environment variable.
+  ```bash
+  --username myemail@example.com
+  ```
+
+- `--password`: Password for logging into the Auchan Drive account, can be set via the `PASSWORD` environment variable.
+  ```bash
+  --password mysecretpassword
+  ```
 
 ### Examples
 
 To run the program:
 
 ```bash
-python run.py
+python run.py --scraping-interval 45 --target-url https://custom-url.com --username myemail@example.com --password mysecretpassword --headless
 ```
+
 ## Configuration
 
 The configuration settings are managed through environment variables and can be set in a `.env` file in the root directory of the project.
 Example `.env` file:
 
 ```
-ENV_KEY=example value
+SCRAPING_INTERVAL=30
+TARGET_URL=https://auchandrive.lu/historique-commandes
+HEADLESS=false
+USERNAME=myemail@example.com
+PASSWORD=mysecretpassword
 ```
 
 > [!NOTE]
-> An `example_env` file is provided to get started.  Copy the file to `.env` before running:
+> An `example_env` file is provided to get started. Copy the file to `.env` before running:
 
 ## Shell Script
 
-A shell script run.sh is provided to automate the execution of the script.
+A shell script `run.sh` is provided to automate the execution of the script.
 
 ### Shell Script Examples
 
-Example `run.sh`
+Example `run.sh`:
 
 ```bash
 #!/bin/bash
 source ./.venv/bin/activate
-python ./run.py
+python ./run.py --scraping-interval 45 --target-url https://custom-url.com --headless
 deactivate
-
 ```
 
 ### Running the Shell Script
@@ -101,4 +131,3 @@ To run the script and clear the directory before running:
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
-
