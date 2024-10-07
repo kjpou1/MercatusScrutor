@@ -3,6 +3,7 @@ services:
   mercatusscrutor:
     build: .
     container_name: mercatusscrutor
+    image: mercatusscrutor
     # environment:
     #   - SCRAPING_INTERVAL=30
     #   - TARGET_URL=https://auchandrive.lu/historique-commandes
@@ -13,5 +14,6 @@ services:
     env_file:
       - .env  # Load environment variables from the .env file    
     volumes:
-      - ./data:/app/data
+    #  - ./data:/app/data
+      - /home/kenneth/NetworkDrives/qnap-nas/Application/Data/MercatusScrutor:/app/data
     restart: unless-stopped
