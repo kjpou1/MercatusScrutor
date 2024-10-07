@@ -1,0 +1,17 @@
+version: '3'
+services:
+  mercatusscrutor:
+    build: .
+    container_name: mercatusscrutor
+    # environment:
+    #   - SCRAPING_INTERVAL=30
+    #   - TARGET_URL=https://auchandrive.lu/historique-commandes
+    #   - HEADLESS=false
+    #   - USERNAME=your_username_here
+    #   - PASSWORD=your_password_here
+    #   - ORDER_HISTORY_FILE=/app/data/order_history.json
+    env_file:
+      - .env  # Load environment variables from the .env file    
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
