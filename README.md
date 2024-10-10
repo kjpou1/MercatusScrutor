@@ -8,6 +8,8 @@ The name "MercatusScrutor" has Latin roots, where "Mercatus" means marketplace, 
 
 - [MercatusScrutor](#mercatusscrutor)
   - [Table of Contents](#table-of-contents)
+  - [Prerequisites](#prerequisites)
+  - [Features](#features)
   - [Installation](#installation)
   - [Usage](#usage)
     - [Command Line Arguments](#command-line-arguments)
@@ -19,14 +21,33 @@ The name "MercatusScrutor" has Latin roots, where "Mercatus" means marketplace, 
     - [Using Docker Command](#using-docker-command)
       - [Example Command:](#example-command)
     - [Explanation of the `--restart` Policies:](#explanation-of-the---restart-policies)
-    - [Adding This to the README](#adding-this-to-the-readme)
     - [Running the Container with Automatic Restart](#running-the-container-with-automatic-restart)
     - [Check Logs](#check-logs)
     - [Stop the Container](#stop-the-container)
   - [Shell Script](#shell-script)
     - [Shell Script Examples](#shell-script-examples)
     - [Running the Shell Script](#running-the-shell-script)
+  - [Contributing](#contributing)
+  - [Known Issues / Limitations](#known-issues--limitations)
+  - [Future Roadmap](#future-roadmap)
   - [License](#license)
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed on your system:
+- Python 3.x
+- Docker (for containerization)
+- Git (for cloning the repository)
+- A valid Grocy API setup (if using the inventory feature)
+
+## Features
+
+- Automatic scraping of Auchan Drive order data
+- Historical order tracking with no redundant processing
+- Integration with Grocy API for inventory management
+- Configurable similarity matching for product entries
+- Docker support for easy deployment and scalability
+- Configurable settings via `.env` file
 
 ## Installation
 
@@ -34,7 +55,7 @@ The name "MercatusScrutor" has Latin roots, where "Mercatus" means marketplace, 
 
     ```bash
     git clone https://github.com/kjpou1/MercatusScrutor.git
-    cd project_name
+    cd MercatusScrutor
     ```
 
 2. **Create and activate a virtual environment:**
@@ -50,7 +71,7 @@ The name "MercatusScrutor" has Latin roots, where "Mercatus" means marketplace, 
     pip install -r requirements.txt
     ```
 
-5. **Set environment file**
+4. **Set environment file**
 
     Copy or rename the `example_env` file to `.env` before running:
 
@@ -95,32 +116,70 @@ The configuration settings are managed through environment variables and can be 
 ```bash
 # Example .env file for MercatusScrutor
 
-# Time interval (in minutes) between each scraping process
+# Time interval (in minutes) between each scraping process.
+# This defines how frequently the tool will check for new orders.
+# Example: SCRAPING_INTERVAL=30 will scrape every 30 minutes.
 SCRAPING_INTERVAL=30
 
-# Target URL to start scraping from
+# The target URL from which to scrape order history.
+# This is the URL of the Auchan Drive order history page.
+# Example: TARGET_URL=https://auchandrive.lu/historique-commandes
 TARGET_URL=https://auchandrive.lu/historique-commandes
 
-# Run the browser in headless mode (true/false)
+# Whether to run the browser in headless mode (true/false).
+# Headless mode means the browser will run without a visible window.
+# Note: Headless must be set to 'true' if running on a Raspberry Pi.
+# Example: HEADLESS=true
 HEADLESS=false
 
-# Username for logging into the Auchan Drive account
+# The username for logging into your Auchan Drive account.
+# This should be the email address or username used for login.
+# Example: USERNAME=myemail@example.com
 USERNAME=your_username_here
 
-# Password for logging into the Auchan Drive account
+# The password for logging into your Auchan Drive account.
+# This should be the password associated with your Auchan Drive account.
+# Example: PASSWORD=mysecretpassword
 PASSWORD=your_password_here
 
-# Path to the order history file
-ORDER_HISTORY_FILE=./data/order_history.json
+# The file path where the order history will be saved.
+# This is the location where the tool will save a JSON file containing
+# the historical order data.
+# Example: ORDER_HISTORY_FILE=./data/order_history.json
+ORDER_HISTORY_FILE=order_history.json  
+
+# The base URL for the Grocy API.
+# This is the API endpoint for your Grocy installation, which should be
+# the URL of the server where Grocy is hosted.
+# Example: GROCY_API_BASE=http://homeassistant.local:9192
+GROCY_API_BASE=http://homeassistant.local:9192
+
+# The API key for accessing the Grocy API.
+# This key is required for authentication to interact with the Grocy API.
+# Ensure this key is stored securely and not shared publicly.
+# Example: GROCY_API_KEY=your_api_key_here
+GROCY_API_KEY=your_api_key_here
+
+# The similarity threshold for matching products in Grocy.
+# Products with a similarity percentage below this value will not be processed.
+# Example: SIMILARITY_THRESHOLD=90 means products must match with at least 90% similarity.
+SIMILARITY_THRESHOLD=90
+
+# Warning similarity threshold for logging warnings.
+# Products with a similarity percentage equal to or greater than this value 
+# but below the SIMILARITY_THRESHOLD will trigger a warning in the logs.
+# Example: WARNING_SIMILARITY_THRESHOLD=75 will trigger warnings for matches >= 75% but < 90%.
+WARNING_SIMILARITY_THRESHOLD=75
+
+# Live stock update flag (true/false).
+# If set to true, the system will automatically update Grocy stock with
+# matching products from the order. If set to false, stock updates will be skipped.
+# Example: LIVE_STOCK_UPDATE=true will enable live stock updates.
+LIVE_STOCK_UPDATE=false
+
 ```
 
-> [!NOTE]
-> Headless mode must be set to `true` if running on a Raspberry Pi.
-> An `example_env` file is provided to get started. Copy the file to `.env` before running:
-
-Yes, you can configure Docker to automatically restart the container if it stops or if the host machine reboots. This is done using the `--restart` policy or by specifying it in `docker-compose.yml`. The `unless-stopped` restart policy ensures that the container will restart automatically unless it is explicitly stopped.
-
-Here’s how you can set it up:
+> **Note**: Headless mode must be set to `true` if running on a Raspberry Pi.
 
 ### Using Docker Compose
 
@@ -156,27 +215,6 @@ docker run -d --env-file .env -v $(pwd)/data:/app/data --restart unless-stopped 
 2. **`always`**: The container will always restart if it stops or if Docker itself restarts.
 3. **`on-failure`**: The container will restart only if it exits with a non-zero exit code (i.e., if it crashes).
 4. **`unless-stopped`**: The container will restart unless it was explicitly stopped by the user (e.g., with `docker stop`).
-
-### Adding This to the README
-
-Here’s how to add the automatic restart information to the `README.md`:
-
-```markdown
-## Docker
-
-### Docker Setup
-
-To containerize and run MercatusScrutor using Docker, follow these steps:
-
-1. **Create the `.env` file** as described in the [Configuration](#configuration) section and ensure that it is listed in `.gitignore` to avoid committing sensitive information to version control.
-
-### Building the Docker Image
-
-You can build the Docker image using the `Dockerfile` provided in the project root:
-
-```bash
-docker build -t mercatusscrutor .
-```
 
 ### Running the Container with Automatic Restart
 
@@ -236,6 +274,30 @@ To run the script and clear the directory before running:
 ```bash
 ./run.sh
 ```
+
+## Contributing
+
+We welcome contributions! Here's how you can help:
+1. Fork the repository.
+2. Create a new branch (`git checkout -b feature-branch`).
+3. Make your changes and commit (`git commit -m 'Add feature'`).
+4. Push to the branch (`git push origin feature-branch`).
+5. Open a Pull Request.
+
+## Known Issues / Limitations
+
+- Currently, only orders with a similarity above the threshold are added to stock
+
+.
+- The tool assumes the Grocy API is fully operational and accessible at all times.
+- Live stock updates may increase API calls; use with caution in high-traffic systems.
+
+## Future Roadmap
+
+- Add support for other supermarket scraping sources.
+- Implement more granular stock management features.
+- Expand error handling and retries for scraping and API calls.
+- Enable scheduled runs with dynamic business hours.
 
 ## License
 
