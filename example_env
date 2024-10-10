@@ -60,3 +60,9 @@ WARNING_SIMILARITY_THRESHOLD=75
 # matching products from the order. If set to false, stock updates will be skipped.
 # Example: LIVE_STOCK_UPDATE=true will enable live stock updates.
 LIVE_STOCK_UPDATE=false
+
+# TTL for caching products in seconds (default: 10 minutes)
+PRODUCTS_CACHE_TTL=600
+
+# TTL for caching locations in seconds (default: 10 minutes)
+LOCATIONS_CACHE_TTL=600

@@ -19,71 +19,40 @@ class Config(metaclass=SingletonMeta):
         """
         load_dotenv()  # Load environment variables from .env file into os.environ
 
-        # Check if already initialized to prevent re-initialization
         if not self._is_initialized:
-            # Set up a logger for the Config class
             self.logger = logging.getLogger(__name__)
 
-            # Load general settings for the scraping process
+            # General settings
             self._scraping_interval = int(self.get('SCRAPING_INTERVAL', 30))
-            # Time interval in minutes between each scraping run
-
-            self._target_url = self.get(
-                'TARGET_URL',
-                'https://auchandrive.lu/historique-commandes'
-            )
-            # The URL to start scraping from
-
+            self._target_url = self.get('TARGET_URL', 'https://auchandrive.lu/historique-commandes')
             self._headless = self.get('HEADLESS', 'false').lower() == 'true'
-            # Determines whether the browser runs in headless mode (True/False)
-
             self._username = self.get('USERNAME')
-            # Username for logging into Auchan Drive
-
             self._password = self.get('PASSWORD')
-            # Password for logging into Auchan Drive
-
             self._history_file = self.get('ORDER_HISTORY_FILE', 'order_history.json')
-            # Path to the file where order history is stored
 
-            # Load Grocy API-related settings
+            # Grocy API settings
             self._grocy_api_base = self.get('GROCY_API_BASE', 'http://hicsvntpi:9192')
-            # Base URL for the Grocy API
-
             self._grocy_api_key = self.get('GROCY_API_KEY')
-            # API key for authenticating with the Grocy API
-            
-            self._similarity_threshold = float(self.get('SIMILARITY_THRESHOLD', 90))  
-            # Default to 90% for product similarity threshold
 
+            # Thresholds and configurations
+            self._similarity_threshold = float(self.get('SIMILARITY_THRESHOLD', 90))
             self._warning_similarity_threshold = float(self.get('WARNING_SIMILARITY_THRESHOLD', 75))
-            # Default warning threshold at 75%
-
             self._live_stock_update = self.get('LIVE_STOCK_UPDATE', 'false').lower() == 'true'
-            # Control whether live stock updates should occur (True/False)
 
-            self._is_initialized = True  # Mark initialization as complete
+            # Caching Time-to-Live (TTL) settings
+            self._products_cache_ttl = int(self.get('PRODUCTS_CACHE_TTL', 600))  # Default 600 seconds (10 minutes)
+            self._locations_cache_ttl = int(self.get('LOCATIONS_CACHE_TTL', 600))  # Default 600 seconds (10 minutes)
+
+            self._is_initialized = True
 
     @classmethod
     def initialize(cls):
-        """
-        Class method to explicitly initialize the Config singleton instance.
-        Ensures that the configuration is set up before use.
-        """
+        """ Class method to explicitly initialize the Config singleton instance. """
         cls()
 
     @staticmethod
     def get(key, default=None):
-        """
-        Static method to retrieve the value of an environment variable.
-
-        Parameters:
-            key (str): The name of the environment variable to retrieve.
-            default: The default value to return if the variable is not found.
-
-        Returns:
-            The value of the environment variable if it exists, otherwise the default value.
-        """
+        """ Static method to retrieve the value of an environment variable. """
         return os.getenv(key, default)
 
     # Property for scraping_interval
@@ -179,20 +148,26 @@ class Config(metaclass=SingletonMeta):
     # Property for live_stock_update
     @property
     def live_stock_update(self) -> bool:
-        """
-        Get the value of live stock update configuration.
-
-        Returns:
-            bool: True if live stock updates are enabled, False otherwise.
-        """
         return self._live_stock_update
 
     @live_stock_update.setter
     def live_stock_update(self, value: bool):
-        """
-        Set the live stock update configuration.
-
-        Parameters:
-            value (bool): True to enable live stock updates, False to disable.
-        """
         self._live_stock_update = value
+
+    # Property for products_cache_ttl
+    @property
+    def products_cache_ttl(self) -> int:
+        return self._products_cache_ttl
+
+    @products_cache_ttl.setter
+    def products_cache_ttl(self, value: int):
+        self._products_cache_ttl = value
+
+    # Property for locations_cache_ttl
+    @property
+    def locations_cache_ttl(self) -> int:
+        return self._locations_cache_ttl
+
+    @locations_cache_ttl.setter
+    def locations_cache_ttl(self, value: int):
+        self._locations_cache_ttl = value

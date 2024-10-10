@@ -1,13 +1,14 @@
 import requests
 import logging
 from app.config.config import Config
+from cachetools import TTLCache
 
 class GrocyService:
     def __init__(self):
         """
         Initialize the GrocyService class by loading the necessary configuration
         settings for interacting with the Grocy API, including the base API URL
-        and the API key. Logging is also initialized to track actions and errors.
+        and the API key. Also, set up TTL caching for products and locations.
         """
         self.config = Config()  # Load configuration settings from the global config
         self.api_base = self.config.grocy_api_base  # Base URL for the Grocy API
@@ -19,8 +20,22 @@ class GrocyService:
             "GROCY-API-KEY": self.api_key
         }
 
+        # Set up TTL cache for products and locations (TTL values from config)
+        self.products_cache = TTLCache(maxsize=100, ttl=self.config.products_cache_ttl)  # Cache for products
+        self.locations_cache = TTLCache(maxsize=50, ttl=self.config.locations_cache_ttl)  # Cache for locations
+
     def fetch_products(self):
-        """Fetch a list of products from the Grocy API using a GET request."""
+        """
+        Fetch a list of products from the Grocy API using a GET request.
+        Cached for the duration specified by the PRODUCTS_CACHE_TTL setting.
+        
+        Returns:
+            dict: The JSON response from the API if successful, or None if failed.
+        """
+        if 'products' in self.products_cache:
+            self.logger.info("Fetching products from cache.")
+            return self.products_cache['products']
+
         url = f"{self.api_base}/api/objects/products"
         try:
             self.logger.info(f"Fetching products from Grocy API: {url}")
@@ -28,9 +43,11 @@ class GrocyService:
 
             if response.status_code == 200:
                 self.logger.info("Successfully fetched products from Grocy API.")
-                return response.json()
+                products = response.json()
+                self.products_cache['products'] = products  # Cache the result
+                return products
             else:
-                self.logger.error(f"Failed to fetch products: {response.status_code}, Response: {response.text}")
+                self.logger.error(f"Failed to fetch products: {response.status_code}")
                 return None
 
         except requests.RequestException as e:
@@ -38,7 +55,17 @@ class GrocyService:
             return None
 
     def fetch_locations(self):
-        """Fetch a list of locations from the Grocy API using a GET request."""
+        """
+        Fetch a list of locations from the Grocy API using a GET request.
+        Cached for the duration specified by the LOCATIONS_CACHE_TTL setting.
+        
+        Returns:
+            dict: The JSON response from the API if successful, or None if failed.
+        """
+        if 'locations' in self.locations_cache:
+            self.logger.info("Fetching locations from cache.")
+            return self.locations_cache['locations']
+
         url = f"{self.api_base}/api/objects/locations"
         try:
             self.logger.info(f"Fetching locations from Grocy API: {url}")
@@ -46,9 +73,11 @@ class GrocyService:
 
             if response.status_code == 200:
                 self.logger.info("Successfully fetched locations from Grocy API.")
-                return response.json()
+                locations = response.json()
+                self.locations_cache['locations'] = locations  # Cache the result
+                return locations
             else:
-                self.logger.error(f"Failed to fetch locations: {response.status_code}, Response: {response.text}")
+                self.logger.error(f"Failed to fetch locations: {response.status_code}")
                 return None
 
         except requests.RequestException as e:
