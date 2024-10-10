@@ -1,7 +1,6 @@
 from datetime import datetime
 import re
 
-
 class Utils:
     @staticmethod
     def clean_string(value: str) -> str:
@@ -19,14 +18,16 @@ class Utils:
     @staticmethod
     def extract_numeric_value(value: str) -> str:
         """
-        Static method to remove non-numeric characters and euro signs, 
-        leaving only numeric amounts (e.g., price values).
+        Static method to remove non-numeric characters, leaving only numeric amounts. 
+        Handles both commas and periods as decimal separators.
         
         :param value: The input string to clean.
         :return: The cleaned string containing only the numeric value.
         """
-        # Use regex to remove everything except numbers and commas (no euro signs)
-        return re.sub(r'[^\d,]', '', value).strip()
+        # Replace commas with periods (for locales using commas as decimal separators)
+        value = value.replace(",", ".")
+        # Use regex to remove everything except digits and periods
+        return re.sub(r'[^\d.]', '', value).strip()
     
     @staticmethod
     def clean_price(value: str) -> str:
@@ -37,7 +38,7 @@ class Utils:
         :return: The cleaned price string.
         """
         # Take only the first part after splitting by newline characters
-        price_cleaned = value.split("\n")[0].strip()
+        price_cleaned = Utils.clean_string(value) #value.split("\n")[0].strip()
         # Apply extract_numeric_value to remove any remaining unnecessary characters
         return Utils.extract_numeric_value(price_cleaned)
 
@@ -90,4 +91,3 @@ class Utils:
 
         # Return the date in ISO format
         return date_obj.strftime("%Y-%m-%d")
-    

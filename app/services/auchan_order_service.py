@@ -5,6 +5,7 @@ from playwright.async_api import async_playwright, TimeoutError as PlaywrightTim
 from app.config.config import Config
 from app.helpers.utils import Utils
 import os
+from app.services.inventory_service import InventoryService
 
 class AuchanOrderService:
     def __init__(self):
@@ -16,6 +17,7 @@ class AuchanOrderService:
         self.history_file = self.config.history_file
         self.order_history = []  # Store existing orders with details
         self.existing_order_ids = {}  # Map of order_number -> order details
+        self.inventory_service = InventoryService()  # Instantiate InventoryService for inventory management
 
     def load_order_history(self):
         """Loads the existing order history from the JSON file."""
@@ -76,17 +78,17 @@ class AuchanOrderService:
             if order_number in self.existing_order_ids:
                 existing_order = self.existing_order_ids[order_number]
                 existing_order['status'] = existing_order['status'].lower()  # Ensure existing status is lowercase
-                
+
                 # Check if status has changed
                 if new_order['status'] != existing_order['status']:
                     self.logger.info(f"Order {order_number} has a status update: {existing_order['status']} -> {new_order['status']}")
-                    
+
                     # Store the previous status
                     new_order['previous_status'] = existing_order['status']
-                    
+
                     # Add current processing status field
                     new_order['processing_status'] = "pending"
-                    
+
                     # If the status is "annulé", update the order but do not read details again
                     if new_order['status'] == "annulé":
                         existing_order.update(new_order)
@@ -198,7 +200,7 @@ class AuchanOrderService:
                             "order_number": order_number,
                             "reference": reference,
                             "date": Utils.clean_dates(date),
-                            "total_price": Utils.clean_string(total_price),
+                            "total_price": Utils.clean_price(total_price),
                             "pickup_point": pickup_point,
                             "payment_method": payment_method,
                             "status": Utils.clean_string(status),
@@ -219,6 +221,12 @@ class AuchanOrderService:
                         order_details = await self.extract_order_details(page)
                         order["details"] = order_details
                         self.logger.debug(f"Order Details for {order['order_number']}: {order_details}")
+
+                        # Now that the details are fetched, process the order with the InventoryService
+                        if order['status'] == 'livré':
+                            self.inventory_service.process_order(order)  # Call the InventoryService
+                            self.logger.info(f"Inventory updated for order {order['order_number']}.")
+
                     except Exception as e:
                         self.logger.error(f"Failed to extract detailed order information for {order['order_number']}: {e}")
                         continue
