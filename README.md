@@ -10,6 +10,10 @@ The name "MercatusScrutor" has Latin roots, where "Mercatus" means marketplace, 
   - [Table of Contents](#table-of-contents)
   - [Prerequisites](#prerequisites)
   - [Features](#features)
+  - [Grocy Integration](#grocy-integration)
+    - [Grocy Integration Features](#grocy-integration-features)
+    - [Cosine Similarity in Matching](#cosine-similarity-in-matching)
+    - [Example Workflow with Grocy](#example-workflow-with-grocy)
   - [Installation](#installation)
   - [Usage](#usage)
     - [Command Line Arguments](#command-line-arguments)
@@ -40,14 +44,72 @@ Before you begin, ensure you have the following installed on your system:
 - Git (for cloning the repository)
 - A valid Grocy API setup (if using the inventory feature)
 
+Here’s an example that includes both the **existing features** and the **newly highlighted ones** for a more comprehensive **Features** section:
+
 ## Features
 
-- Automatic scraping of Auchan Drive order data
-- Historical order tracking with no redundant processing
-- Integration with Grocy API for inventory management
-- Configurable similarity matching for product entries
-- Docker support for easy deployment and scalability
-- Configurable settings via `.env` file
+- **Efficient Caching for API Calls**  
+  Reduce unnecessary API requests with TTL (Time-to-Live) caching of products and locations. This optimization helps improve performance by reducing the load on the Grocy API and making the tool more scalable. Cache durations are configurable via environment variables.
+
+- **Live Stock Updates**  
+  Optionally enable real-time updates to the Grocy stock whenever new orders are processed. This ensures that your inventory remains up-to-date with minimal manual intervention. The live stock update feature can be toggled on or off via the `LIVE_STOCK_UPDATE` environment variable.
+
+- **Product Matching with Cosine Similarity**  
+  Ensure accurate product matching between the order data and your Grocy inventory using cosine similarity. This algorithm improves the precision of product matching, helping avoid mismatches, especially when dealing with large or similar product sets.
+
+- **Customizable Product Matching Thresholds**  
+  Set your own similarity thresholds to control how closely products need to match to be processed. Additionally, configure a warning threshold to log near matches, providing flexibility for different levels of matching precision.
+
+- **Automatic Scraping of Auchan Drive Orders**  
+  Automate the extraction of order data from Auchan Drive. The tool tracks historical orders, ensuring that redundant orders are skipped, and only new or updated orders are processed, streamlining data handling.
+
+- **Historical Order Tracking**  
+  Store and track historical order data in a JSON file. This enables better management of recurring orders and allows for easy reference to past purchases.
+
+- **Docker Support for Easy Deployment**  
+  Deploy the tool effortlessly with Docker. Utilize the `docker-compose.yml` for containerization, with support for automatic restarts and environment variable configurations to ensure the tool runs reliably across environments.
+
+- **Configurable Settings via `.env`**  
+  Customize scraping intervals, API base URLs, product matching thresholds, and other critical settings via a simple `.env` file. This allows for easy configuration changes without altering the codebase.
+
+## Grocy Integration
+
+MercatusScrutor integrates with **Grocy**, an open-source home management system, to automate inventory management based on your Auchan Drive orders. This integration ensures that your Grocy stock remains synchronized with real-world purchases.
+
+### Grocy Integration Features
+
+- **Automatic Stock Updates**  
+  MercatusScrutor can automatically update Grocy’s stock for matching products from your Auchan Drive orders. Products are added to the correct stock location with the proper quantities and prices based on the order data.
+
+- **Cosine Similarity-Based Product Matching**  
+  To match products between Auchan Drive orders and your Grocy inventory, MercatusScrutor uses **cosine similarity**, a mathematical algorithm that compares the similarity between two sets of text data. This helps ensure accurate product matching even if the product names aren't an exact match. The similarity threshold can be customized in the `.env` file to control how strict the matching should be.
+
+- **Configurable Matching Thresholds**  
+  Set the threshold for product similarity using cosine similarity to match the product names between Auchan Drive orders and Grocy inventory. Configure a secondary warning threshold to log near matches for review.
+
+- **Real-Time Updates**  
+  With the `LIVE_STOCK_UPDATE` setting enabled, Grocy stock is updated in real-time. Alternatively, you can turn this off for batch updates later.
+
+- **Location Matching**  
+  MercatusScrutor supports mapping products to custom locations within Grocy. For example, if your Grocy inventory has items stored in a location labeled “Parking,” MercatusScrutor will ensure the order data is matched to that location.
+
+---
+
+### Cosine Similarity in Matching
+
+MercatusScrutor relies on the **cosine similarity** algorithm to match product names between Auchan Drive orders and Grocy inventory items. Cosine similarity measures the angle between two vectors in a multi-dimensional space, where the vectors represent text strings (such as product names). This approach works well for comparing similar or near-identical product names, even if they have minor differences in formatting or spelling.
+
+By default, products that meet or exceed the configured similarity threshold (e.g., 90%) are considered matches, and stock updates are applied to these products. Products that fall between the warning threshold and the similarity threshold trigger warnings in the logs, allowing users to review potential near-matches manually.
+
+---
+
+### Example Workflow with Grocy
+
+1. **Scraping**: MercatusScrutor scrapes the order history from Auchan Drive.
+2. **Matching**: It uses cosine similarity to match products from the orders with existing Grocy products.
+3. **Stock Update**: If live updates are enabled, the matching products are immediately added to your Grocy stock.
+4. **Caching**: Products and locations are cached for a set duration to optimize API calls.
+
 
 ## Installation
 
@@ -302,3 +364,4 @@ We welcome contributions! Here's how you can help:
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
+
