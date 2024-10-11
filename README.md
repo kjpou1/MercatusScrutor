@@ -1,6 +1,8 @@
 # MercatusScrutor
 
-MercatusScrutor is a web scraping tool specifically designed to automate the extraction and analysis of order data from Auchan Drive. It enables users to efficiently track, store, and update information about their supermarket purchases. With built-in capabilities to manage historical order records, the tool focuses on ensuring that all orders are tracked, avoiding redundant processing and providing insightful details about purchases. MercatusScrutor emphasizes reliability, scalability, and optimized performance for the seamless handling of large amounts of order data.
+MercatusScrutor is a web scraping tool, powered by **Playwright**, designed to automate the extraction and analysis of order data from Auchan Drive. It enables users to efficiently track, store, and update information about their supermarket purchases. The tool integrates with **Grocy**, an open-source home management system, to automate inventory updates based on your orders, ensuring real-time synchronization of your stock with minimal manual intervention.
+
+With built-in capabilities to manage historical order records, MercatusScrutor focuses on ensuring that all orders are tracked, avoiding redundant processing, and providing insightful details about purchases. By leveraging **cosine similarity** for product matching and TTL (Time-to-Live) caching for API efficiency, the tool emphasizes reliability, scalability, and optimized performance for handling large amounts of order data.
 
 The name "MercatusScrutor" has Latin roots, where "Mercatus" means marketplace, and "Scrutor" means to search or examine thoroughly, reflecting the tool's purpose of efficiently examining marketplace order data.
 
